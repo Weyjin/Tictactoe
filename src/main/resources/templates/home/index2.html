@@ -1,0 +1,46 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>井字棋</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<style>
+	*{ margin:0; padding:0;}
+	.row{
+	   width:375px;
+	}
+	 .game-cell{
+	    height:120px;
+		width:120px;
+		background:#eee;
+		text-align:center;
+		line-height:120px;
+		font-size:120px;
+		margin:auto;
+		padding:0 0;
+		float:left;
+		border:solid #fff 1px;
+		vertical-align: top; 
+	 }
+	
+	</style>
+</head>
+
+
+<body>
+<div class="row">
+<div class="game-cell" onclick="move(this,0,0)"></div><div class="game-cell" onclick="move(this,0,1)"></div><div  class="game-cell" onclick="move(this,0,2)"></div>
+
+ <div class="game-cell" onclick="move(this,1,0)"></div><div class="game-cell" onclick="move(this,1,1)"></div><div  class="game-cell" onclick="move(this,1,2)"></div>
+
+<div class="game-cell" onclick="move(this,2,0)"></div><div class="game-cell" onclick="move(this,2,1)"></div><div  class="game-cell" onclick="move(this,2,2)"></div>
+</div>
+
+<script>
+   function move(object,row,column){
+      console.log(row+":"+column);
+	  object.innerText="o";
+   }
+
+</script>
+</body> 
+</html>
