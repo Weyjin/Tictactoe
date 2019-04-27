@@ -5,6 +5,7 @@ public class Move {
     private String socketId;
     private int row;
     private int column;
+    private String message;
 
     public String getRole() {
         return role;
@@ -36,5 +37,13 @@ public class Move {
 
     public void setColumn(int column) {
         this.column = column;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

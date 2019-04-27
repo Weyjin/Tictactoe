@@ -2,6 +2,8 @@ package com.tictactoe.game.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.tictactoe.game.entity.Move;
+import com.tictactoe.game.entity.Result;
+import com.tictactoe.game.utils.ChessboardUtil;
 import org.springframework.stereotype.Component;
 
 import javax.websocket.*;
@@ -18,11 +20,17 @@ public class WebSocketOneToOne {
     private static int onlineCount;
     //实现服务端与单一客户端通信的话，可以使用Map来存放，其中Key为用户标识
     private static Map<String,WebSocketOneToOne> connections = new ConcurrentHashMap<>();
+    private static Map<String,Boolean> plays = new ConcurrentHashMap<>();
+    static {
+        plays.put("1",true);
+        plays.put("2",true);
+    }
+
     // 与某个客户端的连接会话，需要通过它来给客户端发送数据
     private Session session;
     private String role;
     private String socketId;
-
+    private static int[][] chessboards=new int[3][3];
     /**
      * 连接建立成功调用的方法
      *
@@ -35,9 +43,26 @@ public class WebSocketOneToOne {
 
         this.role = role;             //用户标识
         this.socketId = socketId;         //会话标识
+
         connections.put(role,this);     //添加到map中
+
+
         addOnlineCount();               // 在线数加
         System.out.println("有新连接加入！新用户："+role+",当前在线人数为" + getOnlineCount());
+
+        Move move= new Move();
+        move.setMessage("初始化");
+
+        String string ="初始化";  //需要发送的信息
+        String to = "";      //发送对象的用户标识
+
+        if(role.equals("1")){
+            to="2";
+        }else{
+            to="1";
+        }
+        send(string,role,to,socketId,chessboards);
+
     }
 
     /**
@@ -63,15 +88,22 @@ public class WebSocketOneToOne {
         System.out.println("来自客户端的消息:" + message);
         Move move= JSON.parseObject(message, Move.class);
 
-        String string = null;  //需要发送的信息
-        String to = null;      //发送对象的用户标识
-        if(json.has("message")){
-            string = (String) json.get("message");
+        String string = move.getMessage();  //需要发送的信息
+        String to = move.getRole();      //发送对象的用户标识
+        int row=move.getRow();
+        int column=move.getColumn();
+        if(role.equals("1")){
+            chessboards[row][column]=1;
+
+        }else{
+            chessboards[row][column]=-1;
         }
-        if(json.has("role")){
-            to = (String) json.get("role");
-        }
-        send(string,role,to,socketId);
+
+            send(string,role,to,socketId,chessboards);
+
+
+
+
     }
 
     /**
@@ -84,31 +116,95 @@ public class WebSocketOneToOne {
     public void onError(Session session, Throwable error) {
         System.out.println("发生错误");
         error.printStackTrace();
+
     }
 
 
     //发送给指定角色
-    public static void send(String msg,String from,String to,String socketId){
+    public static void send(String msg,String from,String to,String socketId,int[][] chessboards1){
+
+        Result result=new Result();
+        boolean finish=ChessboardUtil.isFinish(chessboards1);
+        int flag= ChessboardUtil.isSuccess(chessboards1);
+        String message=null;
+        result.setChessboards(chessboards1);
+
         try {
+
+
+
             //to指定用户
             WebSocketOneToOne con = connections.get(to);
             if(con!=null){
-                if(socketId==con.socketId||con.socketId.equals(socketId)){
-                    con.session.getBasicRemote().sendText(from+"说："+msg);
-                }
+                if(socketId==con.socketId||con.socketId.equals(socketId)) {
 
+
+                    if (flag == 1) {
+                        if (con.role.equals("1")) {
+                            message = "你赢了";
+                        } else {
+                            message = "你输了";
+                        }
+                        chessboards=new int[3][3];
+                    } else if (flag == -1) {
+                        if (con.role.equals("2")) {
+                            message = "你赢了";
+                        } else {
+                            message = "你输了";
+                        }
+                        chessboards=new int[3][3];
+                    } else {
+                        if(finish){
+                            message = "平局";
+                            chessboards=new int[3][3];
+                        }else {
+                            message = "继续下";
+                        }
+
+                    }
+                    result.setMessage(message);
+                    String m = JSON.toJSONString(result);
+
+                    con.session.getBasicRemote().sendText(m);
+                }
             }
+
+
             //from具体用户
             WebSocketOneToOne confrom = connections.get(from);
             if(confrom!=null){
-                if(socketId==confrom.socketId||confrom.socketId.equals(socketId)){
-                    confrom.session.getBasicRemote().sendText(from+"说："+msg);
+                if(socketId==confrom.socketId||confrom.socketId.equals(socketId)) {
+                    if (flag == 1) {
+                        if (confrom.role.equals("1")) {
+                            message = "你赢了";
+                        } else {
+                            message = "你输了";
+                        }
+                        chessboards=new int[3][3];
+                    } else if (flag == -1) {
+                        if (confrom.role.equals("2")) {
+                            message = "你赢了";
+                        } else {
+                            message = "你输了";
+                        }
+                        chessboards=new int[3][3];
+                    } else {
+                        if(finish){
+                            message = "平局";
+                            chessboards=new int[3][3];
+                        }else {
+                            message = "继续下";
+                        }
+                    }
+                    result.setMessage(message);
+                    String m = JSON.toJSONString(result);
+                    confrom.session.getBasicRemote().sendText(m);
                 }
-
             }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+
+
+    }catch (IOException e1) {
+            e1.printStackTrace();
         }
     }
 

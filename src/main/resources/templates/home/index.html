@@ -3,10 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
     <script th:src="@{/js/jquery3.3.1.min.js}"></script>
     <link rel="stylesheet" th:href="@{/css/bootstrap.css}">
+    <style>
+        *{ margin:0; padding:0;}
+        .row{
+            width:375px;
+        }
+        .game-cell{
+            height:120px;
+            width:120px;
+            background:#eee;
+            text-align:center;
+            line-height:120px;
+            font-size:120px;
+            margin:auto;
+            padding:0 0;
+            float:left;
+            border:solid #fff 1px;
+            vertical-align: top;
+        }
+
+    </style>
 </head>
 <body>
-this is home index
+<div class="row">
+    <div class="game-cell" onclick="move(this,0,0)"></div><div class="game-cell" onclick="move(this,0,1)"></div><div  class="game-cell" onclick="move(this,0,2)"></div>
+
+    <div class="game-cell" onclick="move(this,1,0)"></div><div class="game-cell" onclick="move(this,1,1)"></div><div  class="game-cell" onclick="move(this,1,2)"></div>
+
+    <div class="game-cell" onclick="move(this,2,0)"></div><div class="game-cell" onclick="move(this,2,1)"></div><div  class="game-cell" onclick="move(this,2,2)"></div>
+</div>
+<input id="text" type="text" />
+<button onclick="send()">发送消息</button>
+<button onclick="closeWebSocket()">关闭WebSocket连接</button>
+<div id="message"></div>
+<script>
+
+
+    var websocket = null;
+    //判断当前浏览器是否支持WebSocket
+    if ('WebSocket' in window) {
+        var url = "ws://" + window.location.host +"/websocket/1/123"
+        websocket = new WebSocket(url);
+    } else {
+        alert('当前浏览器 Not support websocket')
+    }
+    //连接发生错误的回调方法
+    websocket.onerror = function() {
+        setMessageInnerHTML("WebSocket连接发生错误");
+    };
+    //连接成功建立的回调方法
+    websocket.onopen = function() {
+        setMessageInnerHTML("WebSocket连接成功");
+    }
+    //接收到消息的回调方法
+    websocket.onmessage = function(event) {
+
+        setMessageInnerHTML(event.data);
+        console.log("回调信息",event.data)
+        var json=$.parseJSON(event.data);
+        var chessboards=json.chessboards;
+        for(var i=0;i<chessboards.length;i++){
+            for(var j=0;j<chessboards[i].length;j++){
+               if(chessboards[i][j]==-1){
+                    $(".game-cell").each(function(index){
+                        if(i==0){
+                            if(i+j==index){
+                                $(this).text("x");
+                            }
+                        }else if(i==1){
+                            if(i+j+2==index){
+                                $(this).text("x");
+                            }
+                        }else if(i==2){
+                            if(i+j+4==index){
+                                $(this).text("x");
+                            }
+                        }
+                    });
+                }else if(chessboards[i][j]==1){
+                   $(".game-cell").each(function(index){
+                   if(i==0){
+                       if(i+j==index){
+                           $(this).text("o");
+                       }
+                   }else if(i==1){
+                       if(i+j+2==index){
+                           $(this).text("o");
+                       }
+                   }else if(i==2){
+                       if(i+j+4==index){
+                           $(this).text("o");
+                       }
+                   }});
+               }
+
+            }
+        }
+        var message=json.message;
+        if(message!='继续下'){
+            alert(message);
+        }
+
+
+
+
+    }
+    //连接关闭的回调方法
+    websocket.onclose = function() {
+        setMessageInnerHTML("WebSocket连接关闭");
+    }
+    //监听窗口关闭事件，当窗口关闭时，主动去关闭websocket连接，防止连接还没断开就关闭窗口，server端会抛异常。
+    window.onbeforeunload = function() {
+        closeWebSocket();
+    }
+    //将消息显示在网页上
+    function setMessageInnerHTML(innerHTML) {
+        document.getElementById('message').innerHTML += innerHTML + '<br/>';
+    }
+    //关闭WebSocket连接
+    function closeWebSocket() {
+        websocket.close();
+    }
+    //发送消息
+    function send() {
+        var message = document.getElementById('text').value;
+        //message作为发送的信息，role作为发送的对象标识，socketId是此次会话的标识
+        websocket.send(JSON.stringify({'message': message, 'role': '2', 'socketId': "123"}));
+    }
+    function send(row,column) {
+
+        websocket.send(JSON.stringify({'row':row,'column':column,'message': '', 'role': '2', 'socketId': "123"}));
+        }
+    function move(object,row,column){
+        console.log(row+":"+column);
+        send(row,column);
+        //if($(object).text()==''){
+         //   object.innerText="o";
+
+        //}
+
+    }
+</script>
 </body>
 </html>

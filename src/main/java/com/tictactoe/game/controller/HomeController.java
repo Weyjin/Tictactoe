@@ -14,4 +14,11 @@ public class HomeController {
         view.setViewName("home/index");
         return view;
     }
+
+    @RequestMapping("toIndex")
+    public ModelAndView toIndex(){
+        ModelAndView view=new ModelAndView();
+        view.setViewName("home/index2");
+        return view;
+    }
 }
